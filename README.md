@@ -20,6 +20,8 @@ Terraform module for PieceOfPrivacy.com which setups route53, ses, and lambda to
 | Name | Description | Type | Default | Required |
 |------|-------------|------|---------|:--------:|
 | bucket | The name of the bucket | `string` | n/a | yes |
+| domain | The domain to verify. Requires that you own the domain | `string` | n/a | yes |
+| zone\_id | Zone ID of the route53 hosted zone to add the record(s) to | `string` | n/a | yes |
 | tags | The tags applied to the bucket | `map(string)` | `{}` | no |
 
 ## Outputs
