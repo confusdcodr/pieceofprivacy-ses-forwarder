@@ -4,6 +4,10 @@
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
+locals {
+  project_name = "pieceofprivacy-ses-forwarder"
+}
+
 #####################
 ###   S3 Bucket   ###
 #####################
@@ -94,11 +98,21 @@ data "aws_iam_policy_document" "ses_s3_policy" {
 ###    SNS/SQS    ###
 #####################
 resource "aws_sns_topic" "this" {
-  name = "pieceofprivacy-ses-forwarder"
+  name = local.project_name
+}
+
+locals {
+  sqs_template_vars = {
+    region     = data.aws_region.current.name,
+    account_id = data.aws_caller_identity.current.account_id
+    queue_name = local.project_name
+    topic_name = local.project_name
+  }
 }
 
 resource "aws_sqs_queue" "this" {
-  name = "pieceofprivacy-ses-forwarder"
+  name   = local.project_name
+  policy = templatefile("${path.module}/templates/sqs-access-policy.json", local.sqs_template_vars)
 }
 
 resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
@@ -150,7 +164,7 @@ resource "aws_route53_record" "mx_receive" {
 
 # receipt Rule Set
 resource "aws_ses_receipt_rule_set" "this" {
-  rule_set_name = "pieceofprivacy-ses-forwarder"
+  rule_set_name = local.project_name
 }
 
 # receipt rule to store emails in S3 and then publish to sns
@@ -165,11 +179,7 @@ resource "aws_ses_receipt_rule" "this" {
     bucket_name       = aws_s3_bucket.this.id
     object_key_prefix = "email/"
     position          = 1
-  }
-
-  sns_action {
-    topic_arn = aws_sns_topic.this.arn
-    position  = 2
+    topic_arn         = aws_sns_topic.this.arn
   }
 }
 

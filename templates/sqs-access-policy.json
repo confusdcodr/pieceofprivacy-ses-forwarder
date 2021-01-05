@@ -1,0 +1,20 @@
+{
+    "Statement": [
+        {
+            "Action": [
+                "sqs:SendMessage"
+            ],
+            "Condition": {
+                "ArnEquals": {
+                    "aws:SourceArn": "arn:aws:sns:${region}:${account_id}:${topic_name}"
+                }
+            },
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "sns.amazonaws.com"
+            },
+            "Resource": "arn:aws:sqs:${region}:${account_id}:${queue_name}",
+            "Sid": "Allow-SNS-SendMessage"
+        }
+    ]
+}
