@@ -94,11 +94,11 @@ data "aws_iam_policy_document" "ses_s3_policy" {
 ###    SNS/SQS    ###
 #####################
 resource "aws_sns_topic" "this" {
-  name = "pieceofprivacy-ses"
+  name = "pieceofprivacy-ses-forwarder"
 }
 
 resource "aws_sqs_queue" "this" {
-  name = "pieceofprivacy-ses"
+  name = "pieceofprivacy-ses-forwarder"
 }
 
 resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
@@ -154,8 +154,8 @@ resource "aws_ses_receipt_rule_set" "this" {
 }
 
 # receipt rule to store emails in S3 and then publish to sns
-resource "aws_ses_receipt_rule" "s3" {
-  name          = "forward-emails-to-s3"
+resource "aws_ses_receipt_rule" "this" {
+  name          = "forward-emails-to-s3-sns"
   rule_set_name = aws_ses_receipt_rule_set.this.id
   recipients    = []
   enabled       = true
