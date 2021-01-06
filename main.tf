@@ -184,6 +184,71 @@ resource "aws_ses_receipt_rule" "this" {
 }
 
 # Set the created rule set as the active rule set
-#resource "aws_ses_active_receipt_rule_set" "this" {
-#  rule_set_name = aws_ses_receipt_rule_set.this.id
-#}
+resource "aws_ses_active_receipt_rule_set" "this" {
+  rule_set_name = aws_ses_receipt_rule_set.this.id
+}
+
+#####################
+###    LAMBDA     ###
+#####################
+
+module "lambda" {
+  source = "git::https://github.com/plus3it/terraform-aws-lambda.git?ref=v1.2.0"
+
+  function_name = local.project_name
+  description   = ""
+  handler       = "index.handler"
+  runtime       = "python3.7"
+  timeout       = 10
+
+  source_path = "${path.module}/handlers/ses_forwarder"
+
+  # execution policy
+  policy = {
+    json = data.aws_iam_policy_document.lambda_ses_forwarder.json
+  }
+
+  environment = {
+    variables = {
+      MAIL_RECIPIENT = var.mail_recipient
+      MAIL_SENDER    = var.mail_sender
+      REGION         = data.aws_region.current.name
+    }
+  }
+}
+
+# invocation policy
+resource "aws_lambda_permission" "this" {
+  action         = "lambda:InvokeFunction"
+  function_name  = module.lambda.function_name
+  principal      = "sqs.amazonaws.com"
+  source_account = data.aws_caller_identity.current.account_id
+}
+
+# invocation trigger
+resource "aws_lambda_event_source_mapping" "this" {
+  event_source_arn                   = aws_sqs_queue.this.arn
+  function_name                      = module.lambda.function_arn
+  batch_size                         = 1 #change this to 10 later
+  maximum_batching_window_in_seconds = 0 # change this to 60 later
+}
+
+data "aws_iam_policy_document" "lambda_ses_forwarder" {
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "s3:GetObject",
+      "ses:SendRawEmail",
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes"
+    ]
+
+    resources = [
+      "arn:aws:s3:::${aws_s3_bucket.this.id}/*",
+      "arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identity/*",
+      aws_sqs_queue.this.arn
+    ]
+  }
+}

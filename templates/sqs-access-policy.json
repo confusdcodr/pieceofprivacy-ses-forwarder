@@ -1,9 +1,7 @@
 {
     "Statement": [
         {
-            "Action": [
-                "sqs:SendMessage"
-            ],
+            "Action": "sqs:SendMessage",
             "Condition": {
                 "ArnEquals": {
                     "aws:SourceArn": "arn:aws:sns:${region}:${account_id}:${topic_name}"

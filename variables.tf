@@ -19,6 +19,19 @@ variable "zone_id" {
   type        = string
 }
 
+#####################
+###     LAMBDA    ###
+#####################
+variable "mail_recipient" {
+  description = "The email address to forward the emails to"
+  type        = string
+}
+
+variable "mail_sender" {
+  description = "The email address which forwarded emails come from"
+  type        = string
+}
+
 variable "tags" {
   description = "The tags applied to the bucket"
   type        = map(string)
