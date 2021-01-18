@@ -6,6 +6,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   project_name = "pieceofprivacy-ses-forwarder"
+  timeout      = 30
 }
 
 #####################
@@ -111,8 +112,9 @@ locals {
 }
 
 resource "aws_sqs_queue" "this" {
-  name   = local.project_name
-  policy = templatefile("${path.module}/templates/sqs-access-policy.json", local.sqs_template_vars)
+  name                       = local.project_name
+  visibility_timeout_seconds = local.timeout
+  policy                     = templatefile("${path.module}/templates/sqs-access-policy.json", local.sqs_template_vars)
 }
 
 resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
@@ -199,7 +201,7 @@ module "lambda" {
   description   = ""
   handler       = "main.handler"
   runtime       = "python3.7"
-  timeout       = 30
+  timeout       = local.timeout
 
   source_path = "${path.module}/handlers/ses_forwarder"
 
