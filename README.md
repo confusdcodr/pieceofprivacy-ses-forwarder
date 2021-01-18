@@ -1,6 +1,8 @@
 # pieceofprivacy-ses-forwarder
 Terraform module for PieceOfPrivacy.com which setups route53, ses, and lambda to forward emails to the given destination
 
+## Architecture
+
 <!-- BEGIN TFDOCS -->
 ## Requirements
 
