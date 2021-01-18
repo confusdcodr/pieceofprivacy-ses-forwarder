@@ -3,6 +3,8 @@ Terraform module for PieceOfPrivacy.com which setups route53, ses, and lambda to
 
 ## Architecture
 
+![Architecture](https://github.com/confusdcodr/pieceofprivacy-ses-forwarder/blob/main/_docs/architecture.png?raw=true)
+
 <!-- BEGIN TFDOCS -->
 ## Requirements
 
