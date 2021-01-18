@@ -197,9 +197,9 @@ module "lambda" {
 
   function_name = local.project_name
   description   = ""
-  handler       = "index.handler"
+  handler       = "main.handler"
   runtime       = "python3.7"
-  timeout       = 10
+  timeout       = 30
 
   source_path = "${path.module}/handlers/ses_forwarder"
 
@@ -213,6 +213,8 @@ module "lambda" {
       MAIL_RECIPIENT = var.mail_recipient
       MAIL_SENDER    = var.mail_sender
       REGION         = data.aws_region.current.name
+      DEDUPE_TABLE   = aws_dynamodb_table.sqs_dedupe_table.id
+      LAMBDA_TIMEOUT = 30
     }
   }
 }
@@ -239,16 +241,75 @@ data "aws_iam_policy_document" "lambda_ses_forwarder" {
 
     actions = [
       "s3:GetObject",
-      "ses:SendRawEmail",
-      "sqs:ReceiveMessage",
-      "sqs:DeleteMessage",
-      "sqs:GetQueueAttributes"
     ]
 
     resources = [
       "arn:aws:s3:::${aws_s3_bucket.this.id}/*",
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "ses:SendRawEmail",
+    ]
+
+    resources = [
       "arn:aws:ses:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:identity/*",
+    ]
+  }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "sqs:ReceiveMessage",
+      "sqs:DeleteMessage",
+      "sqs:GetQueueAttributes",
+      "sqs:GetQueueUrl"
+    ]
+
+    resources = [
       aws_sqs_queue.this.arn
     ]
   }
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "dynamodb:GetItem",
+      "dynamodb:PutItem",
+      "dynamodb:Query",
+      "dynamodb:UpdateItem"
+    ]
+
+    resources = [
+      aws_dynamodb_table.sqs_dedupe_table.arn
+    ]
+  }
+}
+
+####################
+###   DYNAMODB   ###
+####################
+resource "aws_dynamodb_table" "sqs_dedupe_table" {
+  name           = "pieceofprivacy-sqs-dedupe"
+  billing_mode   = "PROVISIONED"
+  hash_key       = "message_id"
+  read_capacity  = 5
+  write_capacity = 5
+
+  attribute {
+    name = "message_id"
+    type = "S"
+  }
+
+  #ttl {
+  #  attribute_name = "TimeToExist"
+  #  enabled        = true
+  #}
+
+  tags = var.tags
 }
