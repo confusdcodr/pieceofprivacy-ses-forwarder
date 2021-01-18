@@ -212,11 +212,11 @@ module "lambda" {
 
   environment = {
     variables = {
-      MAIL_RECIPIENT = var.mail_recipient
+      LAMBDA_TIMEOUT = local.timeout
       MAIL_SENDER    = var.mail_sender
       REGION         = data.aws_region.current.name
-      DEDUPE_TABLE   = aws_dynamodb_table.sqs_dedupe_table.id
-      LAMBDA_TIMEOUT = 30
+      DEDUPE_TABLE   = aws_dynamodb_table.dedupe_table.id
+      LOOKUP_TABLE   = aws_dynamodb_table.lookup_table.id
     }
   }
 }
@@ -288,7 +288,8 @@ data "aws_iam_policy_document" "lambda_ses_forwarder" {
     ]
 
     resources = [
-      aws_dynamodb_table.sqs_dedupe_table.arn
+      aws_dynamodb_table.dedupe_table.arn,
+      aws_dynamodb_table.lookup_table.arn
     ]
   }
 }
@@ -296,8 +297,8 @@ data "aws_iam_policy_document" "lambda_ses_forwarder" {
 ####################
 ###   DYNAMODB   ###
 ####################
-resource "aws_dynamodb_table" "sqs_dedupe_table" {
-  name           = "pieceofprivacy-sqs-dedupe"
+resource "aws_dynamodb_table" "dedupe_table" {
+  name           = "${local.project_name}-dedupe"
   billing_mode   = "PROVISIONED"
   hash_key       = "message_id"
   read_capacity  = 5
@@ -315,3 +316,39 @@ resource "aws_dynamodb_table" "sqs_dedupe_table" {
 
   tags = var.tags
 }
+
+resource "aws_dynamodb_table" "lookup_table" {
+  name           = "${local.project_name}-lookup"
+  billing_mode   = "PROVISIONED"
+  hash_key       = "email#domain"
+  range_key      = "destination"
+  read_capacity  = 5
+  write_capacity = 5
+
+  attribute {
+    name = "email#domain"
+    type = "S"
+  }
+
+  attribute {
+    name = "destination"
+    type = "S"
+  }
+
+  tags = var.tags
+}
+
+locals {
+  email  = element(split("@", var.mail_sender), 0)
+  domain = element(split("@", var.mail_sender), 1)
+  lookup_table_template_vars = {
+    hash_value  = "*#${local.domain}",
+    range_value = var.mail_recipient
+  }
+}
+
+#resource "aws_dynamodb_table_item" "this" {
+#  table_name = aws_dynamodb_table.lookup_table.name
+#  hash_key   = aws_dynamodb_table.lookup_table.hash_key
+#  item       = templatefile("${path.module}/templates/ddb-lookup-table-item.json", local.lookup_table_template_vars)
+#}

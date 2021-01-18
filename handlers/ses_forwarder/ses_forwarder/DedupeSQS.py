@@ -5,7 +5,7 @@ from boto3 import resource
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
 
-from .utils import Key, Status
+from .utils import DedupeKey, Status
 
 LOGGER = logging.getLogger()
 
@@ -28,13 +28,13 @@ class DedupeSQS:
 
     def create_item(self, message_id) -> dict:
         item = {
-            Key.HASH_KEY.value: message_id,
-            Key.CONSUMPTION_COUNT.value: 1,
-            Key.STATUS.value: Status.IN_PROGRESS.value,
-            Key.UPDATED.value: int(time()),
+            DedupeKey.HASH_KEY.value: message_id,
+            DedupeKey.CONSUMPTION_COUNT.value: 1,
+            DedupeKey.STATUS.value: Status.IN_PROGRESS.value,
+            DedupeKey.UPDATED.value: int(time()),
         }
 
-        condition_expression = Attr(Key.HASH_KEY.value).not_exists()
+        condition_expression = Attr(DedupeKey.HASH_KEY.value).not_exists()
 
         self.update_item(item, condition_expression)
         return item
@@ -48,8 +48,8 @@ class DedupeSQS:
                 Key={self.hash_key: partition_key_value}, ConsistentRead=True
             )
 
-            if Key.ITEM.value in response:
-                return response[Key.ITEM.value]
+            if DedupeKey.ITEM.value in response:
+                return response[DedupeKey.ITEM.value]
         except ClientError as err:
             LOGGER.error(err)
             raise err

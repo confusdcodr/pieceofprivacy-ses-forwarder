@@ -43,7 +43,6 @@ def test_handler(
     # setup environment variables
     monkeypatch.setenv("LAMBDA_TIMEOUT", "60")
     monkeypatch.setenv("MAIL_SENDER", "from@pieceofprivacy.com")
-    monkeypatch.setenv("MAIL_RECIPIENT", "to@pieceofprivacy.com")
 
     # put example email into the s3 bucket
     key = f"pytest-{uuid.uuid4().hex}"

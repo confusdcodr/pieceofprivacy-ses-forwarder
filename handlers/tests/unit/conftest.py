@@ -1,7 +1,11 @@
 import uuid
+from time import sleep
 
 import boto3
 import pytest
+from ses_forwarder.ses_forwarder.DedupeSQS import DedupeSQS
+from ses_forwarder.ses_forwarder.LookupDestination import LookupDestination
+from ses_forwarder.ses_forwarder.S3Email import S3Email
 
 
 @pytest.fixture()
@@ -10,7 +14,7 @@ def ddb_resource():
 
 
 @pytest.fixture()
-def ddb_table(ddb_resource):
+def dedupe_table(ddb_resource):
     table_name = uuid.uuid4().hex
     table = ddb_resource.create_table(
         TableName=table_name,
@@ -29,8 +33,34 @@ def ddb_table(ddb_resource):
 
 
 @pytest.fixture()
-def dedupe_sqs(ddb_table):
-    return DedupeSQS(ddb_table, "message_id")
+def lookup_table(ddb_resource):
+    table_name = uuid.uuid4().hex
+    table = ddb_resource.create_table(
+        TableName=table_name,
+        AttributeDefinitions=[
+            {"AttributeName": "email#domain", "AttributeType": "S"},
+            {"AttributeName": "destination", "AttributeType": "S"},
+        ],
+        KeySchema=[
+            {"AttributeName": "email#domain", "KeyType": "HASH"},
+            {"AttributeName": "destination", "KeyType": "RANGE"},
+        ],
+        BillingMode="PROVISIONED",
+        ProvisionedThroughput={"ReadCapacityUnits": 5, "WriteCapacityUnits": 5},
+    )
+    sleep(10)
+    yield table_name
+    table.delete()
+
+
+@pytest.fixture()
+def dedupe_sqs(dedupe_table):
+    return DedupeSQS(dedupe_table, "message_id")
+
+
+@pytest.fixture()
+def lookup_email(lookup_table):
+    return LookupDestination(lookup_table, "email#domain", "destination")
 
 
 @pytest.fixture()
