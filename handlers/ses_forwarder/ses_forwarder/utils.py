@@ -1,14 +1,21 @@
 from enum import Enum
 
 
-class Key(Enum):
-    CONSUMPTION_COUNT = "consumption_count"
+class LookupKey(Enum):
+    ITEMS = "Items"
     ITEM = "Item"
-    HASH_KEY = "message_id"
+    HASH_KEY = "email#domain"
+    RANGE_KEY = "destination"
+
+
+class DedupeKey(Enum):
+    ITEM = "Item"
     STATUS = "status"
     UPDATED = "updated"
+    HASH_KEY = "message_id"
+    CONSUMPTION_COUNT = "consumption_count"
 
 
 class Status(Enum):
-    IN_PROGRESS = "IN_PROGRESS"
     COMPLETE = "COMPLETE"
+    IN_PROGRESS = "IN_PROGRESS"

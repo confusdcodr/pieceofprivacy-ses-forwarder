@@ -1,0 +1,4 @@
+{
+  "email#domain": {"S": "${hash_value}"},
+  "destination": {"S": "${range_value}"}
+}

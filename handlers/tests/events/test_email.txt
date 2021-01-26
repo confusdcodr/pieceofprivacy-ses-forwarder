@@ -50,7 +50,7 @@ X-YMail-OSG: Qm4Al.AVM1kqEE0X.yp2neHZQ_q_nUcP6jafjUwAYFbyaYA4rm79LbiSTruXxmE
 Received: from sonic.gate.mail.ne1.yahoo.com by sonic311.consmr.mail.bf2.yahoo.com with HTTP; Sat, 16 Jan 2021 22:08:30 +0000
 Date: Sat, 16 Jan 2021 22:08:29 +0000 (UTC)
 From: Test Email <testing@yahoo.com>
-To: test@pieceofprivacy.com, test@pieceofprivacy.com
+To: test@pieceofprivacy.com
 Message-ID: <1310020326.136374.1610834909968@mail.yahoo.com>
 Subject: Testing
 MIME-Version: 1.0

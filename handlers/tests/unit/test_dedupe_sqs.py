@@ -1,10 +1,8 @@
 import uuid
-from time import sleep
 
 import boto3
 import pytest
 from botocore.exceptions import ClientError
-from ses_forwarder.ses_forwarder.DedupeSQS import DedupeSQS
 
 
 def test_create_item(dedupe_sqs):
