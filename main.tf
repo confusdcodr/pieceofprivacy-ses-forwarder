@@ -296,13 +296,13 @@ resource "aws_dynamodb_table" "dedupe_table" {
 resource "aws_dynamodb_table" "lookup_table" {
   name           = "${local.project_name}-lookup"
   billing_mode   = "PROVISIONED"
-  hash_key       = "email#domain"
+  hash_key       = "email_domain"
   range_key      = "destination"
   read_capacity  = 5
   write_capacity = 5
 
   attribute {
-    name = "email#domain"
+    name = "email_domain"
     type = "S"
   }
 
@@ -318,13 +318,13 @@ locals {
   email  = element(split("@", var.mail_sender), 0)
   domain = element(split("@", var.mail_sender), 1)
   lookup_table_template_vars = {
-    hash_value  = "*#${local.domain}",
+    hash_value  = "${local.domain}",
     range_value = var.mail_recipient
   }
 }
 
-#resource "aws_dynamodb_table_item" "this" {
-#  table_name = aws_dynamodb_table.lookup_table.name
-#  hash_key   = aws_dynamodb_table.lookup_table.hash_key
-#  item       = templatefile("${path.module}/templates/ddb-lookup-table-item.json", local.lookup_table_template_vars)
-#}
+resource "aws_dynamodb_table_item" "this" {
+  table_name = aws_dynamodb_table.lookup_table.name
+  hash_key   = aws_dynamodb_table.lookup_table.hash_key
+  item       = templatefile("${path.module}/templates/ddb-lookup-table-item.json", local.lookup_table_template_vars)
+}
