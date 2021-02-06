@@ -1,0 +1,13 @@
+{
+    "Statement": [
+        {
+            "Action": "sqs:SendMessage",
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "sqs.amazonaws.com"
+            },
+            "Resource": "arn:aws:sqs:${region}:${account_id}:${queue_name}",
+            "Sid": "Allow-SQS-SendMessage"
+        }
+    ]
+}

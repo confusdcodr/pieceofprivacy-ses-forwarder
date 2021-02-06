@@ -11,3 +11,6 @@
 # python cache file
 __pycache__/
 *.pyc
+
+# MAC File
+.DS_Store

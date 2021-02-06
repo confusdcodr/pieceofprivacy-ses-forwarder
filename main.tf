@@ -98,6 +98,8 @@ data "aws_iam_policy_document" "ses_s3_policy" {
 #####################
 ###    SNS/SQS    ###
 #####################
+
+# create an sns topic
 resource "aws_sns_topic" "this" {
   name = local.project_name
 }
@@ -111,16 +113,39 @@ locals {
   }
 }
 
+# create a sqs queue that the sns topic will delivery to
 resource "aws_sqs_queue" "this" {
   name                       = local.project_name
   visibility_timeout_seconds = local.timeout
+
   policy                     = templatefile("${path.module}/templates/sqs-access-policy.json", local.sqs_template_vars)
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.dlq.arn
+    maxReceiveCount     = 4
+  })
 }
 
+# subscribe the sqs queue to the sns topic
 resource "aws_sns_topic_subscription" "user_updates_sqs_target" {
   topic_arn = aws_sns_topic.this.arn
   protocol  = "sqs"
   endpoint  = aws_sqs_queue.this.arn
+}
+
+locals {
+  sqs_dlq_template_vars = {
+    region     = data.aws_region.current.name,
+    account_id = data.aws_caller_identity.current.account_id
+    queue_name = local.project_name
+  }
+}
+
+# create a dead letter queue for messages that
+# aren't processed within the regular queue
+resource "aws_sqs_queue" "dlq" {
+  name                      = "${local.project_name}-dlq"
+  message_retention_seconds = 1209600 #14 days
+  policy                    = templatefile("${path.module}/templates/sqs-dlq-access-policy.json", local.sqs_dlq_template_vars)
 }
 
 #####################
