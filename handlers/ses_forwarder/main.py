@@ -74,7 +74,6 @@ def process_sns(message: dict):
     s3_email = S3Email(bucket, key)
 
     orig_to = s3_email.orig_to.split("@")
-    print(f"orig_to: {orig_to}")
 
     destinations = LookupDestination.lookup_destination(f"{orig_to[0]}#{orig_to[1]}")
 
