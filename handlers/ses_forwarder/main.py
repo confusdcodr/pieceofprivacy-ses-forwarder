@@ -7,7 +7,6 @@ from time import time
 import boto3
 from boto3.dynamodb.conditions import Attr
 from botocore.exceptions import ClientError
-
 from ses_forwarder.DedupeSQS import DedupeSQS
 from ses_forwarder.LookupDestination import LookupDestination
 from ses_forwarder.S3Email import S3Email
@@ -111,7 +110,7 @@ def delete_sqs(queue_arn: str, receipt_handle: str):
         raise err
 
 
-def handler(event: dict, context):
+def main(event: dict):
     """
     Lambda entry point method processing messages consumed from SQS
 
@@ -151,3 +150,16 @@ def handler(event: dict, context):
 
             # delete record from the queue
             delete_sqs(sqs_arn, receipt_handle)
+
+
+def handler(event: dict, context):
+    main(event)
+
+
+if __name__ == "__main__":
+    # quick mechanism to debug broken emails
+    sns_message = {
+        "receipt": {"action": {"bucketName": "[bucket]", "objectKey": "[key]"}}
+    }
+
+    process_sns(sns_message)

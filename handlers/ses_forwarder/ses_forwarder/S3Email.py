@@ -1,5 +1,6 @@
 import email
 import os
+import string
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -26,8 +27,8 @@ class S3Email:
         self.email = email.message_from_string(s3_object["Body"].read().decode("utf-8"))
 
         # Save the original source and destination
-        self._orig_from = self.email.get("From").strip()
-        self._orig_to = self.email.get("To").strip()
+        self._orig_from = self.clean_string(self.email.get("From"))
+        self._orig_to = self.clean_string(self.email.get("To"))
 
         # Setup the generic from address for the forwarded email
         self._forward_from = os.environ["MAIL_SENDER"]
@@ -54,6 +55,16 @@ class S3Email:
     def add_forward_to(self, value):
         if value not in self._forward_to:
             self._forward_to.append(value)
+
+    def clean_string(self, value):
+        # using translate() to remove bad_chars
+        delete_dict = {sp_character: "" for sp_character in string.punctuation}
+        delete_dict[" "] = ""
+        delete_dict.pop("@")
+        delete_dict.pop(".")
+        table = str.maketrans(delete_dict)
+
+        return value.translate(table)
 
     def remove_headers(self):
         # remove unecessary headers
