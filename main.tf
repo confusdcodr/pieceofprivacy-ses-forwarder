@@ -191,7 +191,6 @@ module "lambda" {
       LAMBDA_TIMEOUT = local.timeout
       MAIL_SENDER    = var.mail_sender
       REGION         = data.aws_region.current.name
-      DEDUPE_TABLE   = aws_dynamodb_table.dedupe_table.id
       LOOKUP_TABLE   = aws_dynamodb_table.lookup_table.id
     }
   }
@@ -264,7 +263,6 @@ data "aws_iam_policy_document" "lambda_ses_forwarder" {
     ]
 
     resources = [
-      aws_dynamodb_table.dedupe_table.arn,
       aws_dynamodb_table.lookup_table.arn
     ]
   }
@@ -273,36 +271,16 @@ data "aws_iam_policy_document" "lambda_ses_forwarder" {
 ####################
 ###   DYNAMODB   ###
 ####################
-resource "aws_dynamodb_table" "dedupe_table" {
-  name           = "${local.project_name}-dedupe"
-  billing_mode   = "PROVISIONED"
-  hash_key       = "message_id"
-  read_capacity  = 5
-  write_capacity = 5
-
-  attribute {
-    name = "message_id"
-    type = "S"
-  }
-
-  #ttl {
-  #  attribute_name = "TimeToExist"
-  #  enabled        = true
-  #}
-
-  tags = var.tags
-}
-
 resource "aws_dynamodb_table" "lookup_table" {
   name           = "${local.project_name}-lookup"
   billing_mode   = "PROVISIONED"
-  hash_key       = "email#domain"
+  hash_key       = "email"
   range_key      = "destination"
   read_capacity  = 5
   write_capacity = 5
 
   attribute {
-    name = "email#domain"
+    name = "email"
     type = "S"
   }
 
@@ -317,8 +295,9 @@ resource "aws_dynamodb_table" "lookup_table" {
 locals {
   email  = element(split("@", var.mail_sender), 0)
   domain = element(split("@", var.mail_sender), 1)
+
   lookup_table_template_vars = {
-    hash_value  = "*#${local.domain}",
+    hash_value  = "*@${local.domain}",
     range_value = var.mail_recipient
   }
 }

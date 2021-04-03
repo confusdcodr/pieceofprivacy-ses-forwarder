@@ -4,7 +4,7 @@ from enum import Enum
 class LookupKey(Enum):
     ITEMS = "Items"
     ITEM = "Item"
-    HASH_KEY = "email#domain"
+    HASH_KEY = "email"
     RANGE_KEY = "destination"
 
 
